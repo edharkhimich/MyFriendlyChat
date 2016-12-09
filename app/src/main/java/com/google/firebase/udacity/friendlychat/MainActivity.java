@@ -1,5 +1,6 @@
 package com.google.firebase.udacity.friendlychat;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -28,7 +29,6 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EventListener;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -115,7 +115,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        myRef.addChildEventListener(childEventListener);
         stateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -138,6 +137,19 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == RC_SIGN_IN){
+            if(resultCode == RESULT_OK){
+                Toast.makeText(this, "Signed in!", Toast.LENGTH_SHORT).show();
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Sign is cancelled", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+
     private void onSignCleaner() {
         mUsername = ANONYMOUS;
         mMessageAdapter.clear();
@@ -157,7 +169,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        return super.onOptionsItemSelected(item);
+        switch (item.getItemId()) {
+            case R.id.sign_out_menu:
+                AuthUI.getInstance().signOut(this);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -170,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         firebaseAuth.removeAuthStateListener(stateListener);
-        onDetachDataBaseListeners();
+        onDetachDataBaseListener();
         mMessageAdapter.clear();
     }
 
@@ -204,9 +222,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             };
         }
+        myRef.addChildEventListener(childEventListener);
     }
 
-    private void onDetachDataBaseListeners(){
+    private void onDetachDataBaseListener(){
         if(childEventListener!=null){
             myRef.removeEventListener(childEventListener);
             childEventListener = null;
